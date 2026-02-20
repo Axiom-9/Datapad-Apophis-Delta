@@ -358,6 +358,7 @@
     sectors: renderSectors,
     anomaly: renderAnomaly,
     evac: renderEvac,
+    auftrag: renderAuftrag,
   };
 
   function setView(v){ state.view = v; render(); }
@@ -588,6 +589,7 @@
     g.appendChild(button('STATIONSINFORMATION', () => setView('station')));
     g.appendChild(button('SEKTOREN', () => setView('sectors')));
     g.appendChild(button('ANOMALIE-LOG', () => setView('anomaly')));
+    g.appendChild(button('AUFTRAG', () => setView('auftrag')));
 
     // Layout: two columns to fill landscape nicely
     const wrap = el('div','row');
@@ -863,6 +865,54 @@
     app.appendChild(nav);
   }
 
+  function renderAuftrag(){
+    const p = el('div','panel');
+    p.appendChild(el('div','monoSmall muted','AUFTRAG // TRANSFERANFRAGE'));
+    p.appendChild(el('div','divider'));
+
+    const block = el('div','panel');
+    block.style.borderColor = 'rgba(103,242,255,.22)';
+    block.style.background = 'rgba(0,0,0,.14)';
+
+    block.innerHTML = `
+      <div class="monoSmall" style="font-weight:900; letter-spacing:.06em;">VERTRAG: BIO-TRANSFER (STUFE C)</div>
+      <div class="divider"></div>
+
+      <div class="monoSmall" style="line-height:1.55;">
+        <b>Gegenstand:</b> Humanoider Androiden-Körper (Status: <span class="muted">tot</span>)<br/>
+        <b>Abholpunkt:</b> Dockbucht 8 (lokale Referenz) &nbsp;|&nbsp; <b>Übergabe:</b> Quarantäne-Schleuse<br/>
+        <b>Ident.-Bezeichn.:</b> NU/UM-Δ (unklassifiziert) &nbsp;|&nbsp; <b>Handhabung:</b> gekühlt / stabilisiert<br/>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="monoSmall" style="line-height:1.55;">
+        <b>Kaufpreis (vereinbart):</b> 1.000 Credits<br/>
+        <b>Auszahlung:</b> 50% bei Übergabe, 50% nach Eingangskontrolle<br/>
+        <b>Bonus Vermittler:</b> 300 Credits<br/>
+        <b>Vermittler:</b> "Dr. Voss" (Weiterleitung zu Forschungslabor)
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="monoSmall" style="line-height:1.55;">
+        <b>Hinweis (intern):</b> Bitte keine Fragen zu Herkunft / Vorfällen stellen. Dokumentation wird zentral geführt.<br/>
+        <b>Messwert:</b> <span class="muted">Anomali-Kohärenz</span> erhöht (lokale Sensorik) – weitere Details nicht verfügbar.<br/>
+        <b>Voss-Notiz:</b> "Ich liefere nur. Das Labor will Zahlen. Ich habe keine vollständige Freigabe."<br/>
+      </div>
+
+      <div class="divider"></div>
+      <div class="hint">Dieser Eintrag wirkt wie ein standardisierter Beschaffungsauftrag mit lückenhaften Metadaten.</div>
+    `;
+
+    p.appendChild(block);
+
+    const nav = el('div','navRow');
+    nav.appendChild(backButton('menu'));
+    app.appendChild(p);
+    app.appendChild(nav);
+  }
+
   // --- Minimal self-tests (run only when ?test=1) ---
   (function runTests(){
     const params = new URLSearchParams(location.search);
@@ -872,12 +922,15 @@
       console.assert(typeof renderPin === 'function', 'renderPin exists');
       console.assert(typeof renderSectors === 'function', 'renderSectors exists');
       console.assert(typeof renderEvac === 'function', 'renderEvac exists');
+      console.assert(typeof renderAuftrag === 'function', 'renderAuftrag exists');
       // Render sectors once to ensure no template literal/SVG issues
       const prev = state.view;
       setView('sectors');
       console.assert(app.innerHTML.includes('svg'), 'Sectors includes SVG');
       setView('evac');
       console.assert(app.textContent.includes('HANGAR 9'), 'Evac mentions Hangar 9');
+      setView('auftrag');
+      console.assert(app.textContent.includes('Kaufpreis'), 'Auftrag shows purchase info');
       setView(prev);
       console.log('OK');
     } catch (e){
