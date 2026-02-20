@@ -53,6 +53,12 @@
     .screen{ inset:18px; }
     .top{ padding:12px 14px 8px 14px; }
     .content{ padding:14px; gap:10px; height: calc(100% - 56px); overflow:auto; }
+
+    /* Per-view overrides */
+    .content.noScroll{ overflow:hidden; }
+    .content.compact .panel{ padding:10px; }
+    .content.compact .divider{ margin:6px 0; }
+    .content.compact .hint{ margin-top:2px; }
     .title{ font-size:16px; }
     .panel{ padding:12px; }
     .btn{ padding:10px 12px; }
@@ -365,6 +371,10 @@
 
   function render(){
     screen.classList.toggle('glitchOn', state.view === 'anomaly');
+
+    // Per-view layout tweaks
+    app.classList.toggle('noScroll', state.view === 'sectors');
+    app.classList.toggle('compact', state.view === 'sectors');
 
     if(state.view === 'pin' || state.view === 'hack' || state.view === 'lock'){
       subtitle.textContent = 'ZUGANG GESPERRT';
@@ -712,76 +722,104 @@
 
   // --- Sectors ---
   function renderSectors(){
+    // One-screen sectors schematic (no extra markers/dots).
     const p = el('div','panel');
-    p.appendChild(el('div','monoSmall muted','SEKTOREN // SCHEMATIK'));
-    p.appendChild(el('div','divider'));
+    p.style.display = 'flex';
+    p.style.flexDirection = 'column';
+    p.style.gap = '8px';
+    p.style.height = '100%';
 
+    // Header row
+    const headRow = el('div','row');
+    headRow.style.alignItems = 'center';
+    headRow.style.gap = '10px';
+
+    const headLeft = el('div','col');
+    headLeft.appendChild(el('div','monoSmall muted','SEKTOREN // ÜBERSICHT'));
+
+    const headRight = el('div','col');
+    headRight.style.display = 'flex';
+    headRight.style.justifyContent = 'flex-end';
+    const back = backButton('menu');
+    back.style.maxWidth = '220px';
+    headRight.appendChild(back);
+
+    headRow.appendChild(headLeft);
+    headRow.appendChild(headRight);
+    p.appendChild(headRow);
+
+    // Map container
     const map = el('div','panel');
     map.style.background = 'rgba(7,16,23,.35)';
     map.style.borderColor = 'rgba(103,242,255,.18)';
-    map.style.padding = '12px';
+    map.style.padding = '8px';
+    map.style.flex = '1 1 auto';
+    map.style.display = 'flex';
+    map.style.alignItems = 'center';
+    map.style.justifyContent = 'center';
+    map.style.overflow = 'hidden';
 
-    // NOTE: This is a template literal and is safe; SVG contains no unescaped JS-breaking tokens.
+    // Clean schematic: Dockbucht 8 -> (Forschung / Sicherheit / Zivil) -> Knotenpunkt -> Hangar 9
+    // Removed any small node markers/dots; only the main Knoten is a circle.
     map.innerHTML = `
-      <svg viewBox="0 0 720 420" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="rgba(103,242,255,.55)"/>
-            <stop offset="1" stop-color="rgba(103,242,255,.12)"/>
-          </linearGradient>
-        </defs>
+      <svg viewBox="0 0 1000 520" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+        <!-- subtle frame -->
+        <rect x="10" y="10" width="980" height="500" rx="18" fill="rgba(0,0,0,.10)" stroke="rgba(103,242,255,.16)"/>
 
-        <g opacity=".18">
-          ${Array.from({length:19}).map((_,i)=>`<line x1="0" y1="${i*22}" x2="720" y2="${i*22}" stroke="rgba(103,242,255,.35)" stroke-width="1"/>`).join('')}
-          ${Array.from({length:33}).map((_,i)=>`<line y1="0" x1="${i*22}" y2="420" x2="${i*22}" stroke="rgba(103,242,255,.22)" stroke-width="1"/>`).join('')}
+        <!-- nodes / boxes -->
+        <g font-family="ui-monospace, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" fill="rgba(103,242,255,.96)">
+          <!-- Dock -->
+          <rect x="60" y="215" width="220" height="90" rx="16" fill="rgba(7,16,23,.60)" stroke="rgba(103,242,255,.55)" stroke-width="2"/>
+          <text x="85" y="250" font-size="22" font-weight="800" letter-spacing="1">DOCKBUCHT 8</text>
+
+          <!-- Forschung -->
+          <rect x="360" y="85" width="220" height="90" rx="16" fill="rgba(7,16,23,.55)" stroke="rgba(103,242,255,.35)" stroke-width="2"/>
+          <text x="388" y="122" font-size="19" font-weight="800">FORSCHUNG</text>
+          <text x="388" y="148" font-size="13" opacity=".82">Labore / Analyse</text>
+
+          <!-- Sicherheit -->
+          <rect x="360" y="215" width="220" height="90" rx="16" fill="rgba(7,16,23,.55)" stroke="rgba(103,242,255,.35)" stroke-width="2"/>
+          <text x="388" y="252" font-size="19" font-weight="800">SICHERHEIT</text>
+          <text x="388" y="278" font-size="13" opacity=".82">Kontrolle / Zellen</text>
+
+          <!-- Zivil -->
+          <rect x="360" y="345" width="220" height="90" rx="16" fill="rgba(7,16,23,.55)" stroke="rgba(103,242,255,.35)" stroke-width="2"/>
+          <text x="388" y="382" font-size="19" font-weight="800">ZIVIL</text>
+          <text x="388" y="408" font-size="13" opacity=".82">Quartiere / Kantine</text>
+
+          <!-- Knoten -->
+          <circle cx="735" cy="260" r="58" fill="rgba(7,16,23,.58)" stroke="rgba(103,242,255,.55)" stroke-width="2"/>
+          <text x="697" y="255" font-size="20" font-weight="900">KNOTEN</text>
+
+          <!-- Hangar -->
+          <rect x="875" y="215" width="100" height="90" rx="16" fill="rgba(7,16,23,.60)" stroke="rgba(103,242,255,.55)" stroke-width="2"/>
+          <text x="892" y="248" font-size="18" font-weight="900">HANGAR</text>
+          <text x="918" y="280" font-size="28" font-weight="900" opacity=".95">9</text>
         </g>
 
-        <g font-family="ui-monospace, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="16" fill="rgba(103,242,255,.95)">
-          <rect x="40" y="170" width="170" height="80" rx="12" fill="rgba(7,16,23,.55)" stroke="rgba(103,242,255,.55)"/>
-          <text x="60" y="205" font-weight="700">DOCKBUCHT 8</text>
-          <text x="60" y="230" opacity=".8">Startpunkt</text>
+        <!-- connection lines ON TOP so they can never disappear -->
+        <g stroke="rgba(103,242,255,.85)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" opacity="1" fill="none">
+          <!-- Dock -> Sektoren (90°-Routen) -->
+          <path d="M280 260 L320 260 L320 130 L360 130"/>
+          <path d="M280 260 L360 260"/>
+          <path d="M280 260 L320 260 L320 390 L360 390"/>
 
-          <rect x="250" y="50" width="190" height="78" rx="12" fill="rgba(7,16,23,.55)" stroke="rgba(103,242,255,.35)"/>
-          <text x="270" y="86" font-weight="700">FORSCHUNG</text>
+          <!-- Sektoren -> Knoten (90°-Routen) -->
+          <path d="M580 130 L640 130 L640 260 L677 260"/>
+          <path d="M580 260 L677 260"/>
+          <path d="M580 390 L640 390 L640 260 L677 260"/>
 
-          <rect x="250" y="170" width="190" height="78" rx="12" fill="rgba(7,16,23,.55)" stroke="rgba(103,242,255,.35)"/>
-          <text x="270" y="206" font-weight="700">SICHERHEIT</text>
-
-          <rect x="250" y="290" width="190" height="78" rx="12" fill="rgba(7,16,23,.55)" stroke="rgba(103,242,255,.35)"/>
-          <text x="270" y="326" font-weight="700">ZIVIL</text>
-
-          <circle cx="520" cy="210" r="34" fill="rgba(7,16,23,.55)" stroke="rgba(103,242,255,.55)"/>
-          <text x="495" y="216" font-weight="800">KNOTEN</text>
-
-          <rect x="600" y="170" width="100" height="80" rx="12" fill="rgba(7,16,23,.55)" stroke="rgba(103,242,255,.55)"/>
-          <text x="618" y="205" font-weight="800">HANGAR</text>
-          <text x="632" y="230" opacity=".9">9</text>
-        </g>
-
-        <g stroke="url(#g)" stroke-width="6" stroke-linecap="round" opacity=".9" fill="none">
-          <path d="M210 210 L250 90"/>
-          <path d="M210 210 L250 210"/>
-          <path d="M210 210 L250 330"/>
-          <path d="M440 90 L490 170"/>
-          <path d="M440 210 L490 210"/>
-          <path d="M440 330 L490 250"/>
-          <path d="M554 210 L600 210"/>
-        </g>
-
-        <g fill="rgba(103,242,255,.85)" opacity=".9">
-          <circle cx="240" cy="105" r="4"/><circle cx="240" cy="210" r="4"/><circle cx="240" cy="315" r="4"/>
-          <circle cx="490" cy="170" r="4"/><circle cx="490" cy="210" r="4"/><circle cx="490" cy="250" r="4"/>
+          <!-- Knoten -> Hangar 9 (kurzer Knick für Plan-Optik) -->
+          <path d="M793 260 L835 260 L835 260 L875 260"/>
         </g>
       </svg>
     `;
 
-    p.appendChild(map);
-    p.appendChild(el('div','hint','Alle drei Sektoren führen über einen Knotenpunkt zum Hangar 9.'));
+    // Make sure it fills the available space in landscape.
+    map.style.minHeight = '320px';
 
-    const nav = el('div','navRow');
-    nav.appendChild(backButton('menu'));
+    p.appendChild(map);
     app.appendChild(p);
-    app.appendChild(nav);
   }
 
   // --- Anomaly log ---
@@ -897,7 +935,7 @@
 
       <div class="monoSmall" style="line-height:1.55;">
         <b>Hinweis (intern):</b> Bitte keine Fragen zu Herkunft / Vorfällen stellen. Dokumentation wird zentral geführt.<br/>
-        <b>Messwert:</b> <span class="muted">Anomalie-Kohärenz</span> erhöht (lokale Sensorik) – weitere Details nicht verfügbar.<br/>
+        <b>Messwert:</b> <span class="muted">Anomali-Kohärenz</span> erhöht (lokale Sensorik) – weitere Details nicht verfügbar.<br/>
         <b>Voss-Notiz:</b> "Ich liefere nur. Das Labor will Zahlen. Ich habe keine vollständige Freigabe."<br/>
       </div>
 
